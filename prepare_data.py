@@ -4,11 +4,13 @@ import csv
 import hashlib
 import io
 import json
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DATASETS = {"NED": "NED", "CrisisMMD": "MMD"}
 ID_FIELDS = ("text", "image_name", "time")
+RAW_FIELDS = ID_FIELDS + ("label",)
 REQUIRED = set(ID_FIELDS) | {"label", "type", "theme", "caption"}
 
 
@@ -32,13 +34,65 @@ def read_csv(path):
     return fields, rows
 
 
-def build_plan(metadata_dir, splits_dir, data_root, datasets):
+def load_samples(metadata_dir, dataset, raw_dir=None):
+    """将公开增强表与用户本地原始字段按内容 ID 合并，不按行号猜测对应关系。"""
+    metadata_path = Path(metadata_dir) / f"{dataset}.csv"
+    fields, samples = read_csv(metadata_path)
+    if not (REQUIRED | {"sample_id"}).issubset(fields) or not samples:
+        raise ValueError(f"样本表缺少必要字段或为空：{metadata_path}")
+    if raw_dir is not None:
+        raw_path = Path(raw_dir) / f"{dataset}.csv"
+        raw_fields, raw_samples = read_csv(raw_path)
+        if not set(RAW_FIELDS).issubset(raw_fields) or not raw_samples:
+            raise ValueError(f"本地原始样本表需要 text,image_name,time,label：{raw_path}")
+        raw_index = {}
+        for row in raw_samples:
+            key = sample_id(dataset, row)
+            if row.get("sample_id") and row["sample_id"] != key:
+                raise ValueError(f"本地原始样本的 sample_id 与内容不一致：{raw_path}")
+            if key in raw_index:
+                raise ValueError(f"本地原始样本表存在重复 sample_id：{key}")
+            raw_index[key] = row
+        merged = []
+        for row in samples:
+            key = row["sample_id"]
+            if key not in raw_index:
+                raise ValueError(f"本地原始样本表缺少匹配样本：{dataset} / {key}；"
+                                 "请核对原文、图片路径和时间的原始字符串，不能按行号匹配。")
+            raw = raw_index[key]
+            for field in RAW_FIELDS:
+                if row[field] and row[field] != raw[field]:
+                    raise ValueError(f"样本表与本地原始字段冲突：{key} / {field}")
+            # tags 可从本地原文确定性恢复；公开表不包含帖子中的 #hashtag 或 @mention。
+            tags = str(re.findall(r"[#@]\w+", raw["text"]))
+            merged.append({**row, **{field: raw[field] for field in RAW_FIELDS}, "tags": tags})
+        samples = merged
+    for row in samples:
+        if any(not row[field] for field in RAW_FIELDS):
+            raise ValueError(f"{metadata_path} 的原始字段尚未补齐。请按 data/README.md 准备本地 CSV，"
+                             "然后运行 python prepare_data.py --raw-dir /path/to/raw_csvs。")
+        if "tags" in fields and not row["tags"]:
+            row["tags"] = str(re.findall(r"[#@]\w+", row["text"]))
+    rules_path = Path(metadata_dir) / "text_copy_fields.json"
+    if rules_path.exists():
+        rules = json.loads(rules_path.read_text(encoding="utf-8")).get(dataset, {})
+        by_id = {row["sample_id"]: row for row in samples}
+        for key, columns in rules.items():
+            if key not in by_id or not columns or any(column not in {"caption", "theme", "type"} for column in columns):
+                raise ValueError(f"原文恢复规则无效：{rules_path} / {key}")
+            for column in columns:
+                row = by_id[key]
+                if row[column] and row[column] != row["text"]:
+                    raise ValueError(f"原文恢复规则与已有增强字段冲突：{key} / {column}")
+                row[column] = row["text"]
+    return fields, samples
+
+
+def build_plan(metadata_dir, splits_dir, data_root, datasets, raw_dir=None):
     plan = []
     for dataset in datasets:
         metadata_path = Path(metadata_dir) / f"{dataset}.csv"
-        fields, samples = read_csv(metadata_path)
-        if not (REQUIRED | {"sample_id"}).issubset(fields) or not samples:
-            raise ValueError(f"完整样本表缺少必要字段或为空：{metadata_path}")
+        fields, samples = load_samples(metadata_dir, dataset, raw_dir)
         index = {}
         for row in samples:
             key = row["sample_id"]
@@ -102,6 +156,7 @@ def write_plan(plan, overwrite=False):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--metadata-dir", type=Path, default=ROOT / "data")
+    parser.add_argument("--raw-dir", type=Path, help="用户自备原始字段 CSV 所在目录，包含 NED.csv / CrisisMMD.csv")
     parser.add_argument("--splits-dir", type=Path, default=ROOT / "splits")
     parser.add_argument("--data-root", type=Path, default=ROOT / "data/Event_data")
     parser.add_argument("--datasets", nargs="+", choices=list(DATASETS), default=list(DATASETS))
@@ -112,7 +167,11 @@ def main():
     if missing:
         parser.error("缺少完整样本表：" + ", ".join(missing) +
                      "。请先按 data/README.md 准备授权数据，再运行本命令。")
-    plan = build_plan(args.metadata_dir.resolve(), args.splits_dir.resolve(), args.data_root.resolve(), args.datasets)
+    try:
+        plan = build_plan(args.metadata_dir.resolve(), args.splits_dir.resolve(), args.data_root.resolve(), args.datasets,
+                          args.raw_dir.resolve() if args.raw_dir else None)
+    except (ValueError, FileNotFoundError) as error:
+        parser.error(str(error))
     write_plan(plan, overwrite=args.overwrite)
     for path, _, rows in plan:
         print(f"{path}: {len(rows)} rows")

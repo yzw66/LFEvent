@@ -5,6 +5,9 @@ runs_*/
 eval_*/
 /data/Event_data/
 /data/*.csv
+!/data/NED.csv
+!/data/CrisisMMD.csv
+/data/local/
 .env
 .env.*
 !.env.example

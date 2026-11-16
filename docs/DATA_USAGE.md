@@ -13,8 +13,15 @@
 
 - 数据来源：[CrisisMMD 官方页面](https://crisisnlp.qcri.org/crisismmd)。
 - [CrisisNLP 使用条款](https://crisisnlp.qcri.org/terms-of-use.html)要求将数据内容保密，并允许分享 tweet IDs。本公开包不包含原始帖子全文 CSV。
+- [QCRI 的 Hugging Face 发布页](https://huggingface.co/datasets/QCRI/CrisisMMD)标注 CC BY-NC-SA 4.0。不同发布渠道的许可说明存在差异，请结合实际获取数据时的协议确认可使用和分发的范围。
 - 上游 v2.0 包含 16,058 条不同帖子及 18,082 张图像；本项目按图文样本计数，共 18,082 行、7 个灾害事件。
 - 使用该数据集时，请遵循官方页面列出的引用要求。事件标签在本项目中用于划分和评测，并非其原始人道主义分类标签。
+
+## 公开增强文本
+
+`data/NED.csv` 和 `data/CrisisMMD.csv` 只公开 `sample_id,caption,theme,type` 的值。其他列保留表头但留空，由用户在本地补齐。6 个直接等于原文的增强字段也留空，通过 `data/text_copy_fields.json` 从本地原文恢复。`tags` 在本地从原文提取。
+
+增强文本是基于上游图文生成的衍生材料，删除原文列不自动豁免上游协议。请遵循实际适用的数据条款、引用要求和第三方模型许可；代码的 MIT 许可证不授予这些材料的额外使用或再分发权限。增强文本可能含有模型生成错误，不作为人工真值标注。
 
 ## 固定分割
 

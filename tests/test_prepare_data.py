@@ -1,5 +1,6 @@
 """检查固定分割的样本身份、顺序和完整恢复，以及错误清单的拒绝行为。"""
 from pathlib import Path
+import json
 import tempfile
 import unittest
 import subprocess
@@ -105,6 +106,77 @@ class PrepareDataTests(unittest.TestCase):
         self.assertEqual(protected.read_text(), "do not overwrite")
         write_plan(plan, overwrite=True)
         self.assertEqual(protected.read_bytes(), csv_payload(plan[-1][1], plan[-1][2]))
+
+    def public_metadata(self):
+        public = [{key: row[key] if key in {"sample_id", "caption", "theme", "type"} else ""
+                   for key in self.fields} for row in self.rows]
+        self.save(self.root / "data/NED.csv", self.fields, public)
+        return public
+
+    def test_public_augmentations_merge_by_content_id_and_restore_copied_text(self):
+        self.rows[0]["caption"] = self.rows[0]["text"]
+        public = self.public_metadata()
+        public[0]["caption"] = ""
+        self.save(self.root / "data/NED.csv", self.fields, public)
+        rules = {"NED": {self.rows[0]["sample_id"]: ["caption"]}}
+        (self.root / "data/text_copy_fields.json").write_text(json.dumps(rules))
+        extra = {**self.rows[0], "text": "extra sample outside the published corpus"}
+        self.save(self.root / "raw/NED.csv", ["text", "image_name", "time", "label"],
+                  [extra, *reversed(self.rows)])
+        public_before = (self.root / "data/NED.csv").read_bytes()
+        plan = build_plan(self.root / "data", self.root / "splits", self.root / "output", ["NED"],
+                          raw_dir=self.root / "raw")
+        write_plan(plan)
+        self.assertEqual(public_before, (self.root / "data/NED.csv").read_bytes())
+        for setting, parts in self.orders.items():
+            suffix = "" if setting == "S1" else "2"
+            for part, positions in parts.items():
+                path = self.root / f"output/NED/text/Qwen2-VL-7B-Instruct/{part}{suffix}.csv"
+                self.assertEqual(path.read_bytes(), csv_payload(self.fields[1:], [self.rows[i] for i in positions]))
+
+    def test_unfilled_public_metadata_has_actionable_error(self):
+        self.public_metadata()
+        with self.assertRaisesRegex(ValueError, "--raw-dir"):
+            self.plan()
+        self.assertFalse((self.root / "output").exists())
+
+    def test_missing_or_duplicate_raw_identity_is_rejected(self):
+        self.public_metadata()
+        path = self.root / "raw/NED.csv"
+        fields = ["text", "image_name", "time", "label"]
+        cases = [(self.rows[:-1], "缺少匹配"), ([*self.rows, self.rows[0]], "重复"),
+                 ([{**self.rows[0], "time": "different"}, *self.rows[1:]], "缺少匹配")]
+        for rows, message in cases:
+            with self.subTest(message=message):
+                self.save(path, fields, rows)
+                with self.assertRaisesRegex(ValueError, message):
+                    build_plan(self.root / "data", self.root / "splits", self.root / "output", ["NED"],
+                               raw_dir=self.root / "raw")
+        self.assertFalse((self.root / "output").exists())
+
+    def test_local_raw_id_or_existing_metadata_conflict_is_rejected(self):
+        public = self.public_metadata()
+        path = self.root / "raw/NED.csv"
+        self.save(path, self.fields, [{**self.rows[0], "sample_id": "wrong"}, *self.rows[1:]])
+        with self.assertRaisesRegex(ValueError, "与内容不一致"):
+            build_plan(self.root / "data", self.root / "splits", self.root / "output", ["NED"],
+                       raw_dir=self.root / "raw")
+        self.save(path, self.fields, self.rows)
+        public[0]["label"] = "99"
+        self.save(self.root / "data/NED.csv", self.fields, public)
+        with self.assertRaisesRegex(ValueError, "字段冲突"):
+            build_plan(self.root / "data", self.root / "splits", self.root / "output", ["NED"],
+                       raw_dir=self.root / "raw")
+
+    def test_invalid_or_conflicting_text_copy_rules_are_rejected(self):
+        path = self.root / "data/text_copy_fields.json"
+        for key, columns, message in [("unknown", ["caption"], "规则无效"),
+                                      (self.rows[0]["sample_id"], ["label"], "规则无效"),
+                                      (self.rows[0]["sample_id"], ["caption"], "字段冲突")]:
+            with self.subTest(columns=columns):
+                path.write_text(json.dumps({"NED": {key: columns}}))
+                with self.assertRaisesRegex(ValueError, message):
+                    self.plan()
 
 
 if __name__ == "__main__":

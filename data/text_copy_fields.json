@@ -1,0 +1,23 @@
+{
+  "NED": {
+    "ned_717fe0441f974d38e034f2564e83b05b8e1b3b31b2f949fa3a798a739fcb904e": [
+      "type"
+    ],
+    "ned_bbf651095b58b81845a4b6a43a25db5659f3d343ace7660e0b5595f13da623e3": [
+      "theme"
+    ],
+    "ned_c8c5b3d61d550293575dee221279453d1ab4df25a296cda02c3e19415d9a9795": [
+      "type"
+    ],
+    "ned_ecc368f09861488e94d2101c7c4154556f377b927170ad9d85ccc14a2d5e4b47": [
+      "type"
+    ],
+    "ned_77dcbc7bdd10d2e9dc3aa37b98bd86d8d5610229ba52c94b84360b21cfa96b75": [
+      "type"
+    ],
+    "ned_8ddd349c5f9540600f888baea6a71558d9fe86bcd932961977229c35433b2929": [
+      "type"
+    ]
+  },
+  "CrisisMMD": {}
+}
