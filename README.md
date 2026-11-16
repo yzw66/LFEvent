@@ -46,7 +46,7 @@ splits/
 python prepare_data.py --raw-dir data/local
 ```
 
-脚本按 `text,image_name,time` 的原始字符串计算 ID，与公开增强表匹配；不依赖原始 CSV 行顺序。`tags` 从本地原文提取。6 个直接等于原文的增强字段在公开表中留空，通过 `data/text_copy_fields.json` 在本地恢复。原始字段的精确格式要求见 [data/README.md](data/README.md)。
+脚本按 `text,image_name,time` 的原始字符串计算 ID，与公开增强表匹配；不依赖原始 CSV 行顺序。`tags` 从本地原文提取。原始字段的精确格式要求见 [data/README.md](data/README.md)。
 
 默认生成 `data/Event_data/` 下的训练 CSV，不改写公开表或用户输入。脚本校验 ID 唯一性、顺序、分割互斥和样本覆盖；缺少匹配样本会报错，相同内容可重复生成，覆盖不同内容的已有 CSV 需要显式传入 `--overwrite`。`data/local/` 和生成的数据目录均被 Git 忽略。
 

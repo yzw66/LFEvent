@@ -1,6 +1,5 @@
 """检查固定分割的样本身份、顺序和完整恢复，以及错误清单的拒绝行为。"""
 from pathlib import Path
-import json
 import tempfile
 import unittest
 import subprocess
@@ -113,13 +112,9 @@ class PrepareDataTests(unittest.TestCase):
         self.save(self.root / "data/NED.csv", self.fields, public)
         return public
 
-    def test_public_augmentations_merge_by_content_id_and_restore_copied_text(self):
+    def test_public_augmentations_merge_by_content_id_and_preserve_values(self):
         self.rows[0]["caption"] = self.rows[0]["text"]
-        public = self.public_metadata()
-        public[0]["caption"] = ""
-        self.save(self.root / "data/NED.csv", self.fields, public)
-        rules = {"NED": {self.rows[0]["sample_id"]: ["caption"]}}
-        (self.root / "data/text_copy_fields.json").write_text(json.dumps(rules))
+        self.public_metadata()
         extra = {**self.rows[0], "text": "extra sample outside the published corpus"}
         self.save(self.root / "raw/NED.csv", ["text", "image_name", "time", "label"],
                   [extra, *reversed(self.rows)])
@@ -167,17 +162,6 @@ class PrepareDataTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "字段冲突"):
             build_plan(self.root / "data", self.root / "splits", self.root / "output", ["NED"],
                        raw_dir=self.root / "raw")
-
-    def test_invalid_or_conflicting_text_copy_rules_are_rejected(self):
-        path = self.root / "data/text_copy_fields.json"
-        for key, columns, message in [("unknown", ["caption"], "规则无效"),
-                                      (self.rows[0]["sample_id"], ["label"], "规则无效"),
-                                      (self.rows[0]["sample_id"], ["caption"], "字段冲突")]:
-            with self.subTest(columns=columns):
-                path.write_text(json.dumps({"NED": {key: columns}}))
-                with self.assertRaisesRegex(ValueError, message):
-                    self.plan()
-
 
 if __name__ == "__main__":
     unittest.main()

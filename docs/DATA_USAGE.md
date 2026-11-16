@@ -19,7 +19,7 @@
 
 ## 公开增强文本
 
-`data/NED.csv` 和 `data/CrisisMMD.csv` 只公开 `sample_id,caption,theme,type` 的值。其他列保留表头但留空，由用户在本地补齐。6 个直接等于原文的增强字段也留空，通过 `data/text_copy_fields.json` 从本地原文恢复。`tags` 在本地从原文提取。
+`data/NED.csv` 和 `data/CrisisMMD.csv` 只公开 `sample_id,caption,theme,type` 的值。其他列保留表头但留空，由用户在本地补齐。`tags` 在本地从原文提取。
 
 增强文本是基于上游图文生成的衍生材料，删除原文列不自动豁免上游协议。请遵循实际适用的数据条款、引用要求和第三方模型许可；代码的 MIT 许可证不授予这些材料的额外使用或再分发权限。增强文本可能含有模型生成错误，不作为人工真值标注。
 

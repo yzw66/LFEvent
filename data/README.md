@@ -15,8 +15,6 @@ sample_id,text,image_name,time,label,caption,theme,type,tags
 
 公开文件仅填写 `sample_id,caption,theme,type`，`text,image_name,time,label,tags` 全部留空。增强文本取自实验使用的预生成结果，不在训练过程中重新生成。
 
-NED 中有 6 个增强字段直接等于原始帖子文本；这些值在公开表中也留空。`text_copy_fields.json` 仅记录相应的样本 ID 和字段名，准备数据时从用户本地原文恢复，不分发这些原文。
-
 原始数据来源及适用条款见 [数据使用说明](../docs/DATA_USAGE.md)。增强文本依赖上游图文内容；公开增强字段不意味着取得额外的数据使用或再分发权限。本项目代码的 MIT 许可证不自动适用于数据及增强文本。
 
 ## 准备本地原始字段

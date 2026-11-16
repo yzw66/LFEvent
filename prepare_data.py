@@ -73,18 +73,6 @@ def load_samples(metadata_dir, dataset, raw_dir=None):
                              "然后运行 python prepare_data.py --raw-dir /path/to/raw_csvs。")
         if "tags" in fields and not row["tags"]:
             row["tags"] = str(re.findall(r"[#@]\w+", row["text"]))
-    rules_path = Path(metadata_dir) / "text_copy_fields.json"
-    if rules_path.exists():
-        rules = json.loads(rules_path.read_text(encoding="utf-8")).get(dataset, {})
-        by_id = {row["sample_id"]: row for row in samples}
-        for key, columns in rules.items():
-            if key not in by_id or not columns or any(column not in {"caption", "theme", "type"} for column in columns):
-                raise ValueError(f"原文恢复规则无效：{rules_path} / {key}")
-            for column in columns:
-                row = by_id[key]
-                if row[column] and row[column] != row["text"]:
-                    raise ValueError(f"原文恢复规则与已有增强字段冲突：{key} / {column}")
-                row[column] = row["text"]
     return fields, samples
 
 
