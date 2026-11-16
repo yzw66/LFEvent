@@ -29,8 +29,20 @@ text,image_name,time,label
 
 - `text`：帖子原文，精确保留空格、大小写、换行和 URL。
 - `image_name`：实验使用的图片名或相对路径。NED 为文件名；CrisisMMD 为 `data_image/<事件>/<日期>/<图片名>`，同帖多图保留为不同样本。
-- `time`：实验样本身份中使用的时间字符串，不能自行改写日期格式。
+- `time`：NED 使用 `YYYY-MM-DD HH:MM:SS`，CrisisMMD 使用 `YYYY-MM-DD`。CrisisMMD 可从图片路径的日期目录 `日_月_年` 转换得到；不要使用不同格式的原始 Twitter 时间字符串。
 - `label`：从 0 开始的事件编号；NED 图片目录 `E1` 对应 0，依此类推。CrisisMMD 使用 7 个灾害事件编号，不使用原始人道主义分类标签。
+
+CrisisMMD 的事件目录与编号对应如下：
+
+| 事件目录 | `label` |
+|---|---:|
+| `hurricane_harvey` | 0 |
+| `mexico_earthquake` | 1 |
+| `srilanka_floods` | 2 |
+| `hurricane_irma` | 3 |
+| `hurricane_maria` | 4 |
+| `iraq_iran_earthquake` | 5 |
+| `california_wildfires` | 6 |
 
 也可保留额外列；脚本只合并上述原始字段，`tags` 统一从原文中的 `#hashtag` 和 `@mention` 提取。如果提供 `sample_id`，脚本会核验它与原始字段一致。
 
