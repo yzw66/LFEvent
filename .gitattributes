@@ -1,0 +1,7 @@
+*.py text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.yml text eol=lf
+*.cff text eol=lf
+# 保持 CSV 的原始字节，避免换行转换影响样本 ID 或已固定的样本内容。
+*.csv -text

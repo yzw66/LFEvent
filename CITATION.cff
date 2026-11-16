@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use LFEvent, please cite the associated paper below."
+type: software
+title: LFEvent
+license: MIT
+repository-code: "https://github.com/yzw66/LFEvent"
+authors:
+  - name: LFEvent contributors
+preferred-citation:
+  type: conference-paper
+  title: "Label-Free Contrastive Learning for Open-World Multimodal Social Event Detection"
+  authors:
+    - family-names: Yang
+      given-names: Zhiwei
+    - family-names: Qin
+      given-names: Haimei
+    - family-names: Peng
+      given-names: Hao
+    - family-names: Yu
+      given-names: Xiaoyan
+    - family-names: Sun
+      given-names: Li
+    - family-names: Jiang
+      given-names: Lei
+  collection-title: "Proceedings of the Nineteenth ACM International Conference on Web Search and Data Mining"
+  year: 2026
+  doi: 10.1145/3773966.3777919

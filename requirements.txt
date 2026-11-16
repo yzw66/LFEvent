@@ -1,0 +1,10 @@
+# Python 3.10; CUDA GPU for training.
+torch==2.11.0
+transformers==5.12.1
+numpy==2.2.6
+pandas==2.3.3
+scipy==1.15.3
+scikit-learn==1.7.2
+# 支持 Hugging Face 模型下载时使用 SOCKS 代理。
+httpx[socks]==0.28.1
+Pillow==12.2.0
